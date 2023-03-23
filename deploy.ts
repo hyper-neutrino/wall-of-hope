@@ -11,6 +11,11 @@ const user = {
 await client.application.commands.set([
     {
         type: ApplicationCommandType.ChatInput,
+        name: "help",
+        description: "get bot help",
+    },
+    {
+        type: ApplicationCommandType.ChatInput,
         name: "donation-amount",
         description: "view or modify a user's stored donation amount",
         options: [
@@ -74,7 +79,7 @@ await client.application.commands.set([
     {
         type: ApplicationCommandType.ChatInput,
         name: "set-role",
-        description: "set the donation role for this server (will not remove the previous role)",
+        description: "set the donation role for this server (will remove the previous role)",
         dmPermission: false,
         options: [
             {

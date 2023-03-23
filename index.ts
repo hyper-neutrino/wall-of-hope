@@ -14,9 +14,19 @@ const locked = new Set<string>();
 
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
     if (interaction.isChatInputCommand()) {
-        await interaction.deferReply({ ephemeral: true });
+        if (interaction.commandName !== "help") await interaction.deferReply({ ephemeral: true });
 
-        if (interaction.commandName === "donation-amount") {
+        if (interaction.commandName === "help") {
+            await interaction.reply({
+                content:
+                    "`/donation-amount view <user>` - see how much a user has donated so far\n" +
+                    "`/donation-amount add <user> <amount>` - modify the amount a user has donated so far (this can be negative if needed for some reason)\n" +
+                    "`/donation-amount set <user> <amount>` - set the amount a user has donated so far (this must be at least 0)\n" +
+                    "`/donation-history <user>` - check a user's donation records including who made what changes to the value\n" +
+                    "`/set-role [role]` - set or remove this server's donator role, which will be updated in the background immediately including removing the old role\n",
+                ephemeral: false,
+            });
+        } else if (interaction.commandName === "donation-amount") {
             if (!(await is_admin(interaction.user.id))) {
                 await interaction.editReply({
                     content: "You do not have permission to use this command.",
