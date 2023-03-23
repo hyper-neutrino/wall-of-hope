@@ -1,0 +1,12 @@
+{
+    "scripts": {
+        "start": "ts-node index.ts",
+        "deploy": "ts-node deploy.ts"
+    },
+    "type": "module",
+    "dependencies": {
+        "discord.js": "^14.8.0",
+        "dotenv": "^16.0.3",
+        "mongodb": "^5.1.0"
+    }
+}
