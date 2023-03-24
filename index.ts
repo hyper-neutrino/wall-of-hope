@@ -24,7 +24,7 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
                     "`/donation-amount set <user> <amount>` - set the amount a user has donated so far (this must be at least 0)\n" +
                     "`/donation-history <user>` - check a user's donation records including who made what changes to the value\n" +
                     "`/set-role [role]` - set or remove this server's donator role, which will be updated in the background immediately including removing the old role\n",
-                ephemeral: false,
+                ephemeral: true,
             });
         } else if (interaction.commandName === "donation-amount") {
             if (!(await is_admin(interaction.user.id))) {
