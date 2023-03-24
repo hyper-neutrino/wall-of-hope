@@ -224,11 +224,12 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
 
             if (!skip)
                 for (const [, member] of await interaction.guild.members.fetch())
-                    try {
-                        await member.roles.set(
-                            [...member.roles.cache.keys(), ...(role ? [role.id] : [])].filter((x) => x !== old)
-                        );
-                    } catch {}
+                    if (await db.amounts.findOne({ user: member.id, amount: { $gt: 0 } }))
+                        try {
+                            await member.roles.set(
+                                [...member.roles.cache.keys(), ...(role ? [role.id] : [])].filter((x) => x !== old)
+                            );
+                        } catch {}
 
             locked.delete(interaction.guild.id);
         }
