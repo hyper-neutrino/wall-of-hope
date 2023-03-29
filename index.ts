@@ -13,6 +13,8 @@ const guild = await client.guilds.fetch(process.env.GUILD);
 const locked = new Set<string>();
 
 client.on(Events.GuildMemberAdd, async (member: GuildMember) => {
+    await new Promise((r) => setTimeout(r, 5000));
+
     const entry = await db.roles.findOne({ guild: member.guild.id });
     if (!entry?.role) return;
 
