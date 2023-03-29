@@ -1,4 +1,4 @@
-import { Events, Interaction, InteractionEditReplyOptions, InteractionReplyOptions } from "discord.js";
+import { Events, GuildMember, Interaction, InteractionEditReplyOptions, InteractionReplyOptions } from "discord.js";
 import client from "./client.js";
 import db from "./db.js";
 
@@ -11,6 +11,16 @@ const audit = (x: string) => _audit.send(`**[-]** ${x}`);
 const guild = await client.guilds.fetch(process.env.GUILD);
 
 const locked = new Set<string>();
+
+client.on(Events.GuildMemberAdd, async (member: GuildMember) => {
+    const entry = await db.roles.findOne({ guild: member.guild.id });
+    if (!entry?.role) return;
+
+    if (await db.amounts.findOne({ user: member.id, amount: { $gt: 0 } }))
+        try {
+            await member.roles.add(entry.role);
+        } catch {}
+});
 
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
     if (interaction.isChatInputCommand()) {
