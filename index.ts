@@ -1,4 +1,14 @@
-import { Events, GuildMember, Interaction, InteractionEditReplyOptions, InteractionReplyOptions } from "discord.js";
+import {
+    CommandInteraction,
+    Events,
+    GuildMember,
+    Interaction,
+    InteractionEditReplyOptions,
+    InteractionReplyOptions,
+    Message,
+    MessageReplyOptions,
+    PermissionFlagsBits,
+} from "discord.js";
 import client from "./client.js";
 import db from "./db.js";
 
@@ -183,70 +193,89 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
                 if (entry.value) await audit(`Demoted ${user}.`);
             }
         } else if (interaction.commandName === "set-role") {
-            if (locked.has(interaction.guild.id)) {
-                await interaction.editReply({
-                    content: "Editing the role for this server is locked as an update is underway.",
-                });
-
-                return;
-            }
-
-            locked.add(interaction.guild.id);
-
-            const role = interaction.options.getRole("role");
-
-            let old: string;
-            let skip: boolean = false;
-
-            if (role) {
-                const entry = await db.roles.findOneAndUpdate(
-                    { guild: interaction.guild.id },
-                    { $set: { role: role.id } },
-                    { upsert: true }
-                );
-
-                await interaction.editReply({
-                    content:
-                        entry.value?.role === role.id
-                            ? `This server's role was already ${role}.`
-                            : `This server's role has been set to ${role}. I will update in the background.`,
-                });
-
-                if (entry.value?.role !== role.id)
-                    await audit(
-                        `${interaction.user} set role for ${interaction.guild.name} to ${role.name} (\`${role.id}\`).`
-                    );
-
-                if (entry.value?.role === role.id) skip = true;
-                old = entry.value?.role;
-            } else {
-                const entry = await db.roles.findOneAndDelete({ guild: interaction.guild.id });
-
-                await interaction.editReply({
-                    content: entry.value?.role
-                        ? `Unset the server's role (formerly <@&${entry.value.role}>). I will update in the background.`
-                        : "This server does not have a role set.",
-                });
-
-                if (entry.value?.role) await audit(`${interaction.user} unset role for ${interaction.guild.name}.`);
-
-                if (!entry.value?.role) skip = true;
-                old = entry.value?.role;
-            }
-
-            if (!skip)
-                for (const [, member] of await interaction.guild.members.fetch())
-                    if (await db.amounts.findOne({ user: member.id, amount: { $gt: 0 } }))
-                        try {
-                            await member.roles.set(
-                                [...member.roles.cache.keys(), ...(role ? [role.id] : [])].filter((x) => x !== old)
-                            );
-                        } catch {}
-
-            locked.delete(interaction.guild.id);
+            await trigger_update(interaction, interaction.options.getRole("role")?.id);
         }
     }
 });
+
+client.on(Events.MessageCreate, async (message: Message) => {
+    if (!message.guild) return;
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
+
+    const match = message.content.match(/<@!?1088563988670992444>\s+(<@&\d{17,20}>|\d{17,20})$/);
+    if (!match) return;
+
+    const id = match[2] ?? match[3];
+
+    try {
+        await message.guild.roles.fetch(id);
+    } catch {
+        await message.reply("Invalid ID.");
+    }
+
+    await trigger_update(message, id);
+});
+
+async function trigger_update(ctx: CommandInteraction | Message, role: string) {
+    const reply = (x: MessageReplyOptions & InteractionEditReplyOptions) =>
+        ctx instanceof Message ? ctx.reply(x) : ctx.editReply(x);
+
+    if (locked.has(ctx.guild.id)) {
+        await reply({
+            content: "Editing the role for this server is locked as an update is underway.",
+        });
+
+        return;
+    }
+
+    locked.add(ctx.guild.id);
+
+    let old: string;
+    let skip: boolean = false;
+
+    if (role) {
+        const entry = await db.roles.findOneAndUpdate({ guild: ctx.guild.id }, { $set: { role } }, { upsert: true });
+
+        await reply({
+            content:
+                entry.value?.role === role
+                    ? `This server's role was already <@&${role}>.`
+                    : `This server's role has been set to <@&${role}>. I will update in the background.`,
+        });
+
+        if (entry.value?.role !== role)
+            await audit(
+                `${ctx.member} set role for ${ctx.guild.name} to ${ctx.guild.roles.cache.get(role).name} (\`${role}\`).`
+            );
+
+        if (entry.value?.role === role) skip = true;
+        old = entry.value?.role;
+    } else {
+        const entry = await db.roles.findOneAndDelete({ guild: ctx.guild.id });
+
+        await reply({
+            content: entry.value?.role
+                ? `Unset the server's role (formerly <@&${entry.value.role}>). I will update in the background.`
+                : "This server does not have a role set.",
+        });
+
+        if (entry.value?.role) await audit(`${ctx.member} unset role for ${ctx.guild.name}.`);
+
+        if (!entry.value?.role) skip = true;
+        old = entry.value?.role;
+    }
+
+    if (!skip)
+        for (const [, member] of await ctx.guild.members.fetch())
+            if (await db.amounts.findOne({ user: member.id, amount: { $gt: 0 } }))
+                try {
+                    await member.roles.set(
+                        [...member.roles.cache.keys(), ...(role ? [role] : [])].filter((x) => x !== old)
+                    );
+                } catch {}
+
+    locked.delete(ctx.guild.id);
+}
 
 async function is_admin(id: string) {
     if (id === process.env.OWNER) return true;
