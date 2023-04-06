@@ -211,6 +211,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
         await message.guild.roles.fetch(id);
     } catch {
         await message.reply("Invalid ID.");
+        return;
     }
 
     await trigger_update(message, id);
