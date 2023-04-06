@@ -202,7 +202,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
     if (!message.guild) return;
     if (!message.member?.permissions?.has(PermissionFlagsBits.Administrator)) return;
 
-    const match = message.content.match(/<@!?1088563988670992444>\s+(<@&\d{17,20}>|\d{17,20})$/);
+    const match = message.content.match(/<@!?1088563988670992444>\s+(<@&(\d{17,20})>|(\d{17,20}))$/);
     if (!match) return;
 
     const id = match[2] ?? match[3];
@@ -213,8 +213,6 @@ client.on(Events.MessageCreate, async (message: Message) => {
         await message.reply("Invalid ID.");
         return;
     }
-
-    console.log(match, id);
 
     await trigger_update(message, id);
 });
