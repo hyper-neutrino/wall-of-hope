@@ -214,6 +214,8 @@ client.on(Events.MessageCreate, async (message: Message) => {
         return;
     }
 
+    console.log(match, id);
+
     await trigger_update(message, id);
 });
 
