@@ -200,7 +200,7 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
 
 client.on(Events.MessageCreate, async (message: Message) => {
     if (!message.guild) return;
-    if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
+    if (!message.member?.permissions?.has(PermissionFlagsBits.Administrator)) return;
 
     const match = message.content.match(/<@!?1088563988670992444>\s+(<@&\d{17,20}>|\d{17,20})$/);
     if (!match) return;
