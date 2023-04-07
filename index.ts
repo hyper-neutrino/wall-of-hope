@@ -217,6 +217,47 @@ client.on(Events.MessageCreate, async (message: Message) => {
     await trigger_update(message, id);
 });
 
+client.on(Events.MessageCreate, async (message: Message) => {
+    if (message.webhookId !== "1090468417489883156") return;
+
+    try {
+        const user = await client.users.fetch(message.embeds[0].description.split(">")[0].slice(2));
+        const amount =
+            message.embeds[0].footer.text === "No Amount Specified"
+                ? 10
+                : parseInt(message.embeds[0].footer.text.slice(1));
+
+        const entry = await db.amounts.findOneAndUpdate({ user: user.id }, { $inc: { amount } }, { upsert: true });
+
+        await db.history.findOneAndUpdate(
+            { user: user.id },
+            { $push: { history: { time: new Date(), user: "1088563988670992444", action: "add", amount } } } as unknown,
+            { upsert: true }
+        );
+
+        const old_amount = entry.value?.amount ?? 0;
+        const new_amount = old_amount + amount;
+
+        await audit(
+            `\`AUTO\`: ADD ${user} $${amount.toFixed(2)} (${old_amount.toFixed(2)} => ${new_amount.toFixed(2)})`
+        ).catch();
+
+        await message.react(":white_check_mark:");
+
+        if (old_amount > 0 !== new_amount > 0)
+            for (const entry of await db.roles.find().toArray())
+                try {
+                    const guild = await client.guilds.fetch(entry.guild);
+                    const member = await guild.members.fetch(user);
+
+                    if (old_amount <= 0) await member.roles.add(entry.role);
+                    else await member.roles.remove(entry.role);
+                } catch {}
+    } catch {
+        await message.react(":x:");
+    }
+});
+
 async function trigger_update(ctx: CommandInteraction | Message, role: string) {
     const reply = (x: MessageReplyOptions & InteractionEditReplyOptions) =>
         ctx instanceof Message ? ctx.reply(x) : ctx.editReply(x);
