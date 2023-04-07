@@ -218,6 +218,9 @@ client.on(Events.MessageCreate, async (message: Message) => {
 });
 
 client.on(Events.MessageCreate, async (message: Message) => {
+    if (message.channel.id !== "1090465892682432533") return;
+
+    console.log(message.webhookId);
     if (message.webhookId !== "1090468417489883156") return;
 
     try {
@@ -242,7 +245,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
             `\`AUTO\`: ADD ${user} $${amount.toFixed(2)} (${old_amount.toFixed(2)} => ${new_amount.toFixed(2)})`
         ).catch();
 
-        await message.react(":white_check_mark:");
+        await message.react("✅");
 
         if (old_amount > 0 !== new_amount > 0)
             for (const entry of await db.roles.find().toArray())
@@ -254,9 +257,11 @@ client.on(Events.MessageCreate, async (message: Message) => {
                     else await member.roles.remove(entry.role);
                 } catch {}
     } catch {
-        await message.react(":x:");
+        await message.react("❌");
     }
 });
+
+client.on(Events.ClientReady, () => console.log("Ready!"));
 
 async function trigger_update(ctx: CommandInteraction | Message, role: string) {
     const reply = (x: MessageReplyOptions & InteractionEditReplyOptions) =>
