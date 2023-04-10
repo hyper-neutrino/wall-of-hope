@@ -119,7 +119,9 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
 
                             if (old_amount <= 0) await member.roles.add(entry.role);
                             else await member.roles.remove(entry.role);
-                        } catch {}
+                        } catch (error) {
+                            console.error(error);
+                        }
 
                 locked.delete(user.id);
             }
@@ -253,7 +255,9 @@ client.on(Events.MessageCreate, async (message: Message) => {
 
                     if (old_amount <= 0) await member.roles.add(entry.role);
                     else await member.roles.remove(entry.role);
-                } catch {}
+                } catch (error) {
+                    console.error(error);
+                }
     } catch {
         await message.react("❌");
     }
