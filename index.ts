@@ -219,8 +219,6 @@ client.on(Events.MessageCreate, async (message: Message) => {
 
 client.on(Events.MessageCreate, async (message: Message) => {
     if (message.channel.id !== "1090465892682432533") return;
-
-    console.log(message.webhookId);
     if (message.webhookId !== "1090468417489883156") return;
 
     try {
