@@ -321,7 +321,9 @@ async function trigger_update(ctx: CommandInteraction | Message, role: string) {
                     await member.roles.set(
                         [...member.roles.cache.keys(), ...(role ? [role] : [])].filter((x) => x !== old)
                     );
-                } catch {}
+                } catch (error) {
+                    console.error(error);
+                }
 
     locked.delete(ctx.guild.id);
 }
